@@ -290,7 +290,7 @@ function connectAndAuthorize() {
                 mode: 'LIVE',
                 symbol: buy.symbol,
                 amount: buy.buy_price,
-                decision: buy.contract_type === 'CALL' ? 'BUY' : 'SELL',
+                decision: buy.contract_type === 'CALL' ? 'SELL' : 'BUY',
                 result: 'PENDING',
                 contract_id: buy.contract_id,
                 profit: 0,
