@@ -293,7 +293,7 @@ function connectAndAuthorize() {
                 decision: buy.contract_type === 'CALL' ? 'CALL' : 'PUT',
                 result: 'PENDING',
                 contract_id: buy.contract_id,
-                profit: 0,
+                profit: 0.30,
                 regime: marketRegime.type
             };
             saveHistoryRecord(rec);
