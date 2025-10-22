@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Deriv Bot v2.0</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">Please wait...</p>
+        </div>
+    </div>
+
+    <header>
+        <h1>Enhanced Deriv Bot v2.0: Adaptive Intelligence</h1>
+    </header>
+
+    <main>
+        <section class="controls">
+            <h2>Configuration</h2>
+            <div class="form-group">
+                <label for="token">API Token:</label>
+                <input type="text" id="token" placeholder="Enter Deriv API Token">
+            </div>
+            <div class="form-group">
+                <label for="symbol">Symbol:</label>
+                <select id="symbol">
+                    <option value="R_10">Volatility 10 Index</option>
+                    <option value="R_25">Volatility 25 Index</option>
+                    <option value="R_50">Volatility 50 Index</option>
+                    <option value="R_75">Volatility 75 Index</option>
+                    <option value="R_100">Volatility 100 Index</option>
+                    <!-- Add more symbols as needed -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="granularity">Granularity (seconds):</label>
+                <select id="granularity">
+                    <option value="60">1 Minute</option>
+                    <option value="120">2 Minutes</option>
+                    <option value="180">3 Minutes</option>
+                    <option value="300">5 Minutes</option>
+                    <option value="600">10 Minutes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="stake">Stake (USD):</label>
+                <input type="number" id="stake" value="1" min="0.35" step="0.01">
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="liveMode">
+                <label for="liveMode">Enable Live Trading (Real Money)</label>
+            </div>
+            <div id="confirmLiveGroup" class="form-group checkbox-group hidden">
+                <input type="checkbox" id="confirmLive">
+                <label for="confirmLive">Confirm Live Trades</label>
+            </div>
+            <div class="button-group">
+                <button id="connectBtn">Connect & Authorize</button>
+                <button id="startAutoBtn" disabled>Start Auto Trading</button>
+                <button id="stopAutoBtn" disabled>Stop Auto Trading</button>
+                <button id="clearHistoryBtn">Clear History</button>
+            </div>
+        </section>
+
+        <section class="status">
+            <h2>Status</h2>
+            <p id="status">Idle - Adaptive Intelligence Ready</p>
+            <p id="lastUpdated">Last Updated: -</p>
+            <p id="tradesCount">Trades: 0</p>
+            <p id="decisionText">Decision: -</p>
+        </section>
+
+        <section class="indicators">
+            <h2>Indicators & Analysis</h2>
+            <ul id="indList"></ul>
+        </section>
+
+        <section class="chart">
+            <h2>Candle Chart</h2>
+            <canvas id="candleChart" height="400"></canvas>
+        </section>
+
+        <section class="feed">
+            <h2>Activity Feed</h2>
+            <div id="feed" class="feed-container"></div>
+        </section>
+
+        <section class="history">
+            <h2>Trade History</h2>
+            <div id="history" class="history-container"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Enhanced Deriv Bot. Use at your own risk. Demo account recommended.</p>
+    </footer>
+
+    <script src="candles.js"></script>
+    <script src="decisions.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
