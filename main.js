@@ -10,7 +10,8 @@
  - Real-time tick subscription for live updates
  - Advanced error handling and reconnection logic
  - Persistent settings via localStorage
- - Safety: Live mode requires double confirmation
+ - Safety: Live mode requires single confirmation
+ - Automatic contract purchase without user prompts
 */
 
 /* ---------- Config ---------- */
@@ -114,12 +115,10 @@ function renderHistory() {
     tradesCountEl.textContent = `Trades: ${hist.length}`;
 }
 function clearHistory() {
-    if (confirm('Clear all trade history?')) {
-        localStorage.removeItem('tradeHistory');
-        performanceMetrics = { wins: 0, losses: 0, totalProfit: 0, regimeHistory: [] };
-        renderHistory();
-        appendFeed('Trade history cleared', 'warn');
-    }
+    localStorage.removeItem('tradeHistory');
+    performanceMetrics = { wins: 0, losses: 0, totalProfit: 0, regimeHistory: [] };
+    renderHistory();
+    appendFeed('Trade history cleared', 'warn');
 }
 function updateBalanceDisplay() {
     if (accountBalance !== null) {
@@ -191,19 +190,6 @@ async function autoCheck() {
     appendFeed(`Trade parameters: ${contract_type} | Duration: ${durationOptimization.duration}s | ${durationOptimization.rationale}`, 'info');
 
     if (liveModeCheckbox.checked) {
-        const ok = confirm(
-            `Confirm LIVE ${contract_type} on ${symbol}\n` +
-            `Stake: ${stake} USD\n` +
-            `Duration: ${durationOptimization.duration}s (optimized)\n` +
-            `Confidence: ${(d.confidence * 100).toFixed(0)}%\n` +
-            `Regime: ${marketRegime.type}\n` +
-            `Pattern: ${d.indicators.pattern.pattern}\n` +
-            `Risk Score: ${(durationOptimization.riskScore * 100).toFixed(0)}%`
-        );
-        if (!ok) {
-            appendFeed('Live trade cancelled by user', 'warn');
-            return;
-        }
         requestLiveProposal(params);
     } else {
         simulateTrade(params, d.indicators);
@@ -285,10 +271,11 @@ function connectAndAuthorize() {
         if (data.proposal) {
             lastProposalReceived = data.proposal;
             appendFeed(`Proposal received - Ask Price: ${data.proposal.ask_price} | Payout: ${data.proposal.payout}`, 'info');
-            if (liveModeCheckbox.checked && confirmLiveCheckbox.checked && data.proposal.id) {
+            // Automatic purchase without confirmation prompt
+            if (liveModeCheckbox.checked && data.proposal.id) {
                 try {
                     ws.send(JSON.stringify({ buy: data.proposal.id, price: data.proposal.ask_price, subscribe: 1 }));
-                    appendFeed(`Buy order sent for proposal ID: ${data.proposal.id}`, 'success');
+                    appendFeed(`Auto-buy executed for proposal ID: ${data.proposal.id}`, 'success');
                 } catch (e) {
                     appendFeed(`Buy failed: ${e.message}`, 'error');
                 }
@@ -387,14 +374,24 @@ granEl.addEventListener('change', () => {
 });
 
 liveModeCheckbox.addEventListener('change', () => {
-    confirmLiveGroup.style.display = liveModeCheckbox.checked ? 'flex' : 'none';
+    // Hide confirm group - single checkbox confirmation only
+    if (confirmLiveGroup) {
+        confirmLiveGroup.style.display = 'none';
+    }
     if (liveModeCheckbox.checked) {
-        appendFeed('⚠️ LIVE MODE ENABLED - Real money at risk! Proceed with extreme caution!', 'warn');
+        appendFeed('⚠️ LIVE MODE ENABLED - Real money at risk! Automatic trading active!', 'warn');
+    } else {
+        appendFeed('Live mode disabled - Simulation mode active', 'info');
     }
 });
 
 /* ---------- Initialization ---------- */
 function init() {
+    // Hide the second confirmation checkbox group on load
+    if (confirmLiveGroup) {
+        confirmLiveGroup.style.display = 'none';
+    }
+    
     // Load persistent settings
     settings = JSON.parse(localStorage.getItem('botSettings') || '{}');
     if (settings.symbol) symbolEl.value = settings.symbol;
@@ -421,6 +418,7 @@ function init() {
     appendFeed('✓ IndicatorsModel: Dynamic weighting enabled', 'success');
     appendFeed('✓ CandlesModel: Predictive pattern recognition active', 'success');
     appendFeed('✓ DurationModel: Adaptive temporal optimization ready', 'success');
+    appendFeed('✓ Automatic contract execution enabled', 'success');
     appendFeed('Enter token and connect to begin trading', 'info');
 }
 init();
