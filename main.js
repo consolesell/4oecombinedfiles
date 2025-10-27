@@ -39,6 +39,8 @@ let marketRegime = { type: 'UNKNOWN', volatility: 0, trend: 0, confidence: 0 };
 let indicatorWeights = { ma: 1.0, rsi: 1.0, bb: 1.0, momentum: 1.0, volume: 1.0 };
 let patternLibrary = new Map();
 let performanceMetrics = { wins: 0, losses: 0, totalProfit: 0, regimeHistory: [] };
+let activeContracts = new Map(); // key: contract_id, value: profit threshold etc.
+const PROFIT_THRESHOLD = 1.20; // e.g., sell if profit >= $1
 
 /* ---------- DOM ---------- */
 const tokenInput = document.getElementById('token');
@@ -284,44 +286,62 @@ function connectAndAuthorize() {
         }
 
         if (data.buy) {
-            const buy = data.buy;
-            const rec = {
-                time: new Date().toLocaleTimeString(),
-                mode: 'LIVE',
-                symbol: buy.symbol,
-                amount: buy.buy_price,
-                decision: buy.contract_type === 'CALL' ? 'CALL' : 'PUT',
-                result: 'PENDING',
-                contract_id: buy.contract_id,
-                profit: 0.30,
-                regime: marketRegime.type
-            };
-            saveHistoryRecord(rec);
-            appendFeed(`Live buy confirmed - Contract ID: ${buy.contract_id}`, 'success');
-            return;
-        }
+    const buy = data.buy;
+    const rec = {
+        time: new Date().toLocaleTimeString(),
+        mode: 'LIVE',
+        symbol: buy.symbol,
+        amount: buy.buy_price,
+        decision: buy.contract_type === 'CALL' ? 'CALL' : 'PUT',
+        result: 'PENDING',
+        contract_id: buy.contract_id,
+        profit: 0,
+        regime: marketRegime.type
+    };
+    saveHistoryRecord(rec);
+    appendFeed(`Live buy confirmed - Contract ID: ${buy.contract_id}`, 'success');
+
+    // ✅ Subscribe to updates for this specific contract
+    activeContracts.set(buy.contract_id, { threshold: PROFIT_THRESHOLD });
+    ws.send(JSON.stringify({ proposal_open_contract: 1, contract_id: buy.contract_id, subscribe: 1 }));
+    return;
+}
 
         if (data.proposal_open_contract) {
-            const poc = data.proposal_open_contract;
-            if (poc.contract_id) {
-                const hist = JSON.parse(localStorage.getItem('tradeHistory') || '[]');
-                const idx = hist.findIndex(h => h.contract_id === poc.contract_id);
-                if (idx >= 0) {
-                    const rec = hist[idx];
-                    rec.result = poc.status.toUpperCase();
-                    if (poc.profit !== undefined) {
-                        rec.profit = parseFloat(poc.profit);
-                        accountBalance += rec.profit;
-                        updateBalanceDisplay();
-                    }
-                    hist[idx] = rec;
-                    localStorage.setItem('tradeHistory', JSON.stringify(hist));
-                    renderHistory();
-                    appendFeed(`Contract ${poc.contract_id} updated: ${rec.result} (${rec.profit.toFixed(2)})`, rec.profit > 0 ? 'success' : 'error');
-                }
+    const poc = data.proposal_open_contract;
+
+    if (poc.contract_id) {
+        // Update history
+        const hist = JSON.parse(localStorage.getItem('tradeHistory') || '[]');
+        const idx = hist.findIndex(h => h.contract_id === poc.contract_id);
+        if (idx >= 0) {
+            const rec = hist[idx];
+            rec.result = poc.status.toUpperCase();
+            if (poc.profit !== undefined) {
+                rec.profit = parseFloat(poc.profit);
+                accountBalance += rec.profit;
+                updateBalanceDisplay();
             }
-            return;
+            hist[idx] = rec;
+            localStorage.setItem('tradeHistory', JSON.stringify(hist));
+            renderHistory();
+            appendFeed(`Contract ${poc.contract_id} updated: ${rec.result} (${rec.profit.toFixed(2)})`, rec.profit > 0 ? 'success' : 'error');
         }
+
+        // ✅ Auto-sell logic
+        if (poc.is_open && poc.profit >= (activeContracts.get(poc.contract_id)?.threshold || PROFIT_THRESHOLD)) {
+            appendFeed(`💰 Profit target reached (${poc.profit.toFixed(2)}). Selling contract ${poc.contract_id}...`, 'success');
+            ws.send(JSON.stringify({ sell: poc.contract_id, price: poc.current_spot }));
+            activeContracts.delete(poc.contract_id); // Clean up
+        }
+
+        // Cleanup if closed
+        if (!poc.is_open) {
+            activeContracts.delete(poc.contract_id);
+        }
+    }
+    return;
+}
     };
 
     ws.onclose = () => {

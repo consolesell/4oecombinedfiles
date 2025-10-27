@@ -278,191 +278,111 @@ function analyzeMicroStructure(tickBuffer, currentCandle) {
 /* ---------- Chart ---------- */
 function renderChart(candles, indicators) {
     const ctx = document.getElementById('candleChart').getContext('2d');
-    
-    // Prepare candlestick data
-    const candlestickData = candles.map(c => ({
-        x: c.epoch * 1000, // Convert to milliseconds
-        o: c.open,
-        h: c.high,
-        l: c.low,
-        c: c.close
-    }));
-    
+    const labels = candles.map(c => new Date(c.epoch * 1000).toLocaleTimeString());
     const closes = candles.map(c => c.close);
-    const timestamps = candles.map(c => c.epoch * 1000);
     const ma14 = indicators.ma14;
     const ma50 = indicators.ma50;
     const rsi = indicators.rsi;
     const bbUpper = indicators.bb.map(b => b.upper);
     const bbMiddle = indicators.bb.map(b => b.middle);
     const bbLower = indicators.bb.map(b => b.lower);
-    
     if (chart) chart.destroy();
-    
     chart = new Chart(ctx, {
-        type: 'candlestick',
         data: {
+            labels,
             datasets: [
                 {
-                    label: 'Price',
-                    data: candlestickData,
-                    color: {
-                        up: '#10b981',
-                        down: '#ef4444',
-                        unchanged: '#64748b'
-                    },
-                    borderColor: {
-                        up: '#10b981',
-                        down: '#ef4444',
-                        unchanged: '#64748b'
-                    },
-                    yAxisID: 'y'
+                    type: 'line',
+                    label: 'Close',
+                    data: closes,
+                    borderColor: 'var(--accent-color)',
+                    tension: 0.1,
+                    pointRadius: 0,
+                    yAxisID: 'y',
+                    borderWidth: 2
                 },
                 {
                     type: 'line',
                     label: 'MA(14)',
-                    data: timestamps.map((t, i) => ({ x: t, y: ma14[i] })),
-                    borderColor: '#ef4444',
-                    backgroundColor: 'transparent',
+                    data: ma14,
+                    borderColor: 'var(--error-color)',
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 2,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
                 },
                 {
                     type: 'line',
                     label: 'MA(50)',
-                    data: timestamps.map((t, i) => ({ x: t, y: ma50[i] })),
+                    data: ma50,
                     borderColor: '#ff9900',
-                    backgroundColor: 'transparent',
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 2,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
                 },
                 {
                     type: 'line',
                     label: 'BB Upper',
-                    data: timestamps.map((t, i) => ({ x: t, y: bbUpper[i] })),
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'transparent',
+                    data: bbUpper,
+                    borderColor: 'var(--warn-color)',
                     borderDash: [6, 4],
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
                 },
                 {
                     type: 'line',
                     label: 'BB Middle',
-                    data: timestamps.map((t, i) => ({ x: t, y: bbMiddle[i] })),
-                    borderColor: '#64748b',
-                    backgroundColor: 'transparent',
+                    data: bbMiddle,
+                    borderColor: 'var(--muted-color)',
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
                 },
                 {
                     type: 'line',
                     label: 'BB Lower',
-                    data: timestamps.map((t, i) => ({ x: t, y: bbLower[i] })),
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
+                    data: bbLower,
+                    borderColor: 'var(--success-color)',
                     borderDash: [6, 4],
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
                 },
                 {
                     type: 'line',
                     label: 'RSI(14)',
-                    data: timestamps.map((t, i) => ({ x: t, y: rsi[i] })),
+                    data: rsi,
                     borderColor: '#9966ff',
-                    backgroundColor: 'transparent',
                     tension: 0.1,
                     pointRadius: 0,
-                    borderWidth: 2,
-                    yAxisID: 'y1'
-                }
+                    yAxisID: 'y1',
+                },
             ]
         },
         options: {
             animation: false,
             plugins: {
-                legend: { 
-                    labels: { 
-                        color: '#cbd5e1',
-                        font: {
-                            family: 'Inter, sans-serif',
-                            size: 11
-                        }
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
-                }
+                legend: { labels: { color: 'var(--text-color)' } }
             },
             scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'minute',
-                        displayFormats: {
-                            minute: 'HH:mm',
-                            hour: 'HH:mm'
-                        }
-                    },
-                    ticks: { 
-                        color: '#64748b',
-                        font: {
-                            family: 'JetBrains Mono, monospace',
-                            size: 10
-                        }
-                    },
-                    grid: {
-                        color: '#252b3d'
-                    }
-                },
+                x: { ticks: { color: 'var(--muted-color)' } },
                 y: {
                     type: 'linear',
                     position: 'left',
-                    ticks: { 
-                        color: '#64748b',
-                        font: {
-                            family: 'JetBrains Mono, monospace',
-                            size: 10
-                        }
-                    },
-                    grid: { 
-                        color: '#252b3d'
-                    }
+                    ticks: { color: 'var(--muted-color)' },
+                    grid: { color: 'var(--border-color)' }
                 },
                 y1: {
                     type: 'linear',
                     position: 'right',
-                    ticks: { 
-                        color: '#9966ff',
-                        font: {
-                            family: 'JetBrains Mono, monospace',
-                            size: 10
-                        }
-                    },
-                    grid: { 
-                        drawOnChartArea: false 
-                    },
+                    ticks: { color: '#9966ff' },
+                    grid: { drawOnChartArea: false },
                     min: 0,
                     max: 100
                 }
             },
             responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            }
+            maintainAspectRatio: false
         }
     });
 }
